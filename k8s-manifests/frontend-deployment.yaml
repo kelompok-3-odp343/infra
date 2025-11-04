@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wandoor-frontend
+  namespace: wandoor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wandoor-frontend
+  template:
+    metadata:
+      labels:
+        app: wandoor-frontend
+    spec:
+      containers:
+<<<<<<< HEAD
+        - name: frontend
+          image: jrtr1/wandoor-frontend-app:frontend-latest
+          imagePullPolicy: Always
+=======
+        - name: wandoor-frontend
+          image: jrtr1/wandoor-frontend-app:latest # ganti sesuai nama image kamu
+>>>>>>> 65e59c8309d750aafb429adda708d9080de17668
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: wandoor
+spec:
+  selector:
+    app: wandoor-frontend
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+<<<<<<< HEAD
+      nodePort: 30081
+      protocol: TCP
+=======
+      nodePort: 30081 # akses dari luar VM: http://<VM_EXTERNAL_IP>:30080
+>>>>>>> 65e59c8309d750aafb429adda708d9080de17668
