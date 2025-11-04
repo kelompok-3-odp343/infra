@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -24,3 +25,31 @@ spec:
                 name: backend-service
                 port:
                   number: 8081
+=======
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wandoor-ingress
+  namespace: wandoor
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: wandoor.local # Ganti dengan domain Anda atau gunakan IP
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8081
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8081
+>>>>>>> 9e7628282f09d6ef04cc5ec291b3a2385a5c3b8b

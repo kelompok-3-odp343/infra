@@ -1,0 +1,59 @@
+
+curl -sfL https://get.k3s.io | K3S_URL="https://10.148.15.210:6443" K3S_TOKEN="K105b2fa0c5a96c42dfeb3283f84230a302f890aa5c4ade984c118b12690a6030d5::server:885516dcc380701bca41a8efc36bb989" INSTALL_K3S_EXEC="--tls-san 10.148.15.210" sh -
+
+
+terraform apply -replace="google_compute_instance.wandoor-master" -replace="google_compute_instance.wandoor-db" -replace="google_compute_instance.wandoor-worker-1" -replace="google_compute_instance.wandoor-worker-2" -replace="google_compute_instance.wandoor-monitoring"
+
+export K3S_TOKEN="K105b8bb320875a81439cdaf5bc27c84467218e31e065c8d832bc6a3bca37c41ed7::server:cf94bee1305e557a60b78a878874de67"
+
+scp -r D:\Kuliah\Lamaran\ODP BNI\Pendidikan\Bootcamp\final_project\devOps-repo\k8s-manifests wandoor-db:~/
+
+sudo kubectl apply -f oracle-pv.yaml -n wandoor
+sudo kubectl apply -f oracle-deployment.yaml -n wandoor
+
+---------------------------------------------------------------------------------------------------------------------------
+
+sudo systemctl stop k3s-agent
+sudo /usr/local/bin/k3s-agent-uninstall.sh
+sudo rm -rf /etc/rancher/k3s/ /var/lib/rancher/k3s/
+
+# Install fresh dengan environment variables yang eksplisit
+export K3S_URL=https://10.148.15.215:6443
+export K3S_TOKEN="K10a89678a91b9372f099f065e47a58cc4d163cdb44a8095834d9cf1dd0f3b457f7::server:96bbc93c634bea5c42a0d612efb7001e"
+export K3S_NODE_NAME=wandoor-worker-1
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent --node-ip=10.148.15.214" sh -
+
+----------------------------------------------------------------------------------------------------------------
+curl -sfL https://get.k3s.io | sh -s - server \
+  --cluster-init \
+  --node-name=wandoor-master \
+  --node-external-ip=10.148.15.215 \
+  --flannel-backend=vxlan
+
+K10ec1c864e9582a19e5c0ef72fc34cf084682f15456f3c50ada7269fe851c13b48::server:3150770794d1c496173fb76ccb96fc89
+
+curl -sfL https://get.k3s.io | sh -s - agent \
+  --node-name=wandoor-worker-1 \
+  --server https://10.148.15.215:6443 \
+  --token K10a89678a91b9372f099f065e47a58cc4d163cdb44a8095834d9cf1dd0f3b457f7::server:96bbc93c634bea5c42a0d612efb7001e
+
+  curl -sfL https://get.k3s.io | K3S_URL=https://10.148.15.215:6443 \
+  K3S_TOKEN=K10a89678a91b9372f099f065e47a58cc4d163cdb44a8095834d9cf1dd0f3b457f7::server:96bbc93c634bea5c42a0d612efb7001e \
+  sh -s - agent
+
+  ------------------------------------------
+  scp -r "D:\Kuliah\Lamaran\ODP BNI\Pendidikan\Bootcamp\final_project\devOps-repo\k8s-manifests" adamalhafizh23@34.126.134.86:6443:/home/adamalhafizh23/
+
+  scp -P 22 -r "D:\Kuliah\Lamaran\ODP BNI\Pendidikan\Bootcamp\final_project\devOps-repo\k8s-manifests" adamalhafizh23@34.126.134.86:/home/adamalhafizh23/
+------------------------------
+docker run -d \
+  --name oracle-db \
+  -p 1521:1521 \
+  -p 5500:5500 \
+  -e ORACLE_PASSWORD=root \
+  -e ORACLE_DATABASE=wandoor_db \
+  -e APP_USER=wandoor \
+  -e APP_USER_PASSWORD=root \
+  -v oracle-data:/opt/oracle/oradata \
+  gvenzl/oracle-free:23-slim
