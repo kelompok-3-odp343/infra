@@ -1,12 +1,24 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Installing K3s (master node)..."
-curl -sfL https://get.k3s.io | sh -
+# Update dan install dependency dasar
+sudo apt-get update -y
+sudo apt-get install -y curl
 
-echo "📂 Saving kubeconfig for local kubectl access..."
-mkdir -p ~/.kube
-sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-sudo chown $USER:$USER ~/.kube/config
+# Jalankan instalasi K3s sebagai master node
+curl -sfL https://get.k3s.io | sh -s - server \
+  --cluster-init \
+  --node-name=wandoor-master \
+  --node-external-ip=10.148.15.215 \
+  --flannel-backend=vxlan
 
-echo "🔐 Master node setup done!"
+# Pastikan service aktif
+sudo systemctl enable k3s
+sudo systemctl start k3s
+
+# Tampilkan token agar bisa digunakan untuk worker
+echo "=================================================="
+echo "✅ K3s Master setup complete!"
+echo "📍 Token Worker:"
+sudo cat /var/lib/rancher/k3s/server/node-token
+echo "=================================================="

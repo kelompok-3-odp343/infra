@@ -115,7 +115,7 @@ resource "google_compute_instance" "wandoor-db" {
     access_config {}
   }
 
-  metadata_startup_script = file("${path.module}/scripts/vm-worker-init.sh")
+  metadata_startup_script = file("${path.module}/scripts/database-vm-init.sh")
 
   service_account {
     scopes = [

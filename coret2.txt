@@ -57,3 +57,13 @@ docker run -d \
   -e APP_USER_PASSWORD=root \
   -v oracle-data:/opt/oracle/oradata \
   gvenzl/oracle-free:23-slim
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  COMMAND INSTALL K3S AGENT:
+  sudo mkdir -p /etc/rancher/k3s
+sudo tee /etc/rancher/k3s/config.yaml > /dev/null <<EOF
+server: https://10.148.15.215:6443
+token: K10a89678a91b9372f099f065e47a58cc4d163cdb44a8095834d9cf1dd0f3b457f7::server:96bbc93c634bea5c42a0d612efb7001e
+EOF
+
+curl -sfL https://get.k3s.io | sh -s - agent
