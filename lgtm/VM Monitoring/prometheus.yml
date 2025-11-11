@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Scrape metrics dari OTel Collector
+  - job_name: "otel_collector"
+    static_configs:
+      - targets: ["10.148.15.215:9464"]
+
+  # Scrape metrics dari Node Exporter di setiap VM
+  - job_name: "node_exporters"
+    static_configs:
+      - targets:
+          - "10.148.15.214:9100" #vm worker 1
+          - "10.148.15.218:9100" #vm worker 2
+          - "localhost:9100" #vm monitoring
+          - "10.148.15.215:9100" #vm master
+          - "10.148.15.217:9100" #vm db
+  - job_name: "kube-state-metrics"
+    static_configs:
+      - targets: ["10.148.15.215:32080"]
+  - job_name: "cadvisor"
+    static_configs:
+      - targets:
+          - "10.148.15.215:9100"
+          - "10.148.15.214:9100"
+          - "10.148.15.218:9100"
