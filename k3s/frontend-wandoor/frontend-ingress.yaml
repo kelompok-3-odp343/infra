@@ -7,8 +7,9 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
-    - host: frontend.wandoor.local   # ganti sesuai domain kamu
+    - host: app.wandoor.my.id
       http:
         paths:
           - path: /
@@ -18,7 +19,3 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
-  tls:
-    - hosts:
-        - frontend.wandoor.local
-      secretName: frontend-tls-secret  # opsional, bisa dihapus jika belum pakai HTTPS

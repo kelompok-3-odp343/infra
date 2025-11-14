@@ -89,3 +89,37 @@ curl -sfL https://get.k3s.io | sh -s - server \
 cara menjalankan file ansible:
 
 ansible-playbook -i inventory.ini playbooks/master.yml
+----------------------------------------------
+
+ssh-copy-id -i ~/.ssh/ansible_key.pub user@<IP_MASTER_VM>
+
+-----------------------------------------------
+[master]
+master-vm ansible_host=10.148.0.13 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+[workers]
+worker-fe ansible_host=10.148.0.12 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/ansible_key
+# worker-be ansible_host=<IP_WORKER_BE> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+[database]
+db-vm ansible_host=136.110.37.125 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+[monitoring]
+monitoring-vm ansible_host=34.143.230.86 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/ansible_key
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+------------
+
+ssh-copy-id adamalhafizh23@10.148.0.12
+ssh-copy-id adamalhafizh23@10.148.0.14
+ssh-copy-id adamalhafizh23@10.148.0.11
+
+ssh-copy-id -i /root/.ssh/id_rsa.pub adamalhafizh23@10.148.0.14
+
+ssh-copy-id -i ~/.ssh/id_rsa.pub -p 22 adamalhafizh23@10.148.0.12
+
+------------------
+  git config --global user.email "adamalhafizh23@gmail.com"
+  git config --global user.name "Your Name"
