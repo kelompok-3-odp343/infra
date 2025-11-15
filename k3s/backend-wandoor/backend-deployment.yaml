@@ -28,7 +28,7 @@ spec:
 
       containers:
         - name: backend
-          image: jrtr1/wandoor-backend-app:backend-62730868153c069e9c70ea2b43208b9013bec6c1
+          image: jrtr1/wandoor-backend-app:backend-967ff53de0536090c8bfa572533b078c86ed350e
           imagePullPolicy: Always
           ports:
             - containerPort: 8081
