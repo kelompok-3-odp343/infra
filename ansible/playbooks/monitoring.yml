@@ -4,11 +4,35 @@
   become: yes
 
   vars:
-    monitoring_dir: /home/{{ ansible_user }}/monitoring
+    monitoring_dir: /home/monitoring
+    repo_dir: /home/infra
+    repo_url: "https://github.com/kelompok-3-odp343/infra.git"
 
   tasks:
     # ==========================
-    # 1️⃣ Update sistem & install dependency dasar
+    # 1️⃣ Clone atau Pull Repo Infra
+    # ==========================
+    - name: Check if repo already exists
+      stat:
+        path: "{{ repo_dir }}/.git"
+      register: repo_git
+
+    - name: Clone infra repository (first time)
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dir }}"
+        version: main
+        force: yes
+      when: not repo_git.stat.exists
+
+    - name: Pull latest changes (if repo already exists)
+      shell: git pull origin main
+      args:
+        chdir: "{{ repo_dir }}"
+      when: repo_git.stat.exists
+
+    # ==========================
+    # 2️⃣ Update sistem & install dependency dasar
     # ==========================
     - name: Update apt dan install dependency
       apt:
@@ -21,7 +45,7 @@
         update_cache: yes
 
     # ==========================
-    # 2️⃣ Install Docker
+    # 3️⃣ Install Docker
     # ==========================
     - name: Cek apakah Docker sudah terpasang
       command: docker --version
@@ -37,7 +61,7 @@
       when: docker_check.rc != 0
 
     # ==========================
-    # 3️⃣ Install Docker Compose
+    # 4️⃣ Install Docker Compose
     # ==========================
     - name: Cek apakah docker-compose sudah terpasang
       command: docker-compose --version
@@ -51,118 +75,25 @@
       when: compose_check.rc != 0
 
     # ==========================
-    # 4️⃣ Buat direktori monitoring
+    # 5️⃣ Buat folder monitoring (jika belum ada)
     # ==========================
-    - name: Buat direktori monitoring stack
+    - name: Create monitoring directory
       file:
-        path: "{{ monitoring_dir }}/{{ item }}"
+        path: "{{ monitoring_dir }}"
         state: directory
         mode: "0755"
-      loop:
-        - prometheus
-        - loki
-        - tempo
-        - grafana
 
     # ==========================
-    # 5️⃣ Buat konfigurasi Prometheus
+    # 6️⃣ Copy docker-compose dari repo infra
     # ==========================
-    - name: Buat file prometheus.yml
+    - name: Copy docker-compose.yml from infra repo
       copy:
-        dest: "{{ monitoring_dir }}/prometheus/prometheus.yml"
-        content: |
-          global:
-            scrape_interval: 15s
-
-          scrape_configs:
-            - job_name: 'kubernetes-nodes'
-              static_configs:
-                - targets: {% for host in groups['master'] + groups['monitoring'] %}
-                - '{{ hostvars[host].ansible_host }}:9100'
-                {% endfor %}
-                  labels:
-                    role: node
-
-            - job_name: 'prometheus'
-              static_configs:
-                - targets: ['localhost:9090']
-
-    # ==========================
-    # 6️⃣ Buat konfigurasi Tempo
-    # ==========================
-    - name: Buat file tempo-config.yml
-      copy:
-        dest: "{{ monitoring_dir }}/tempo/tempo-config.yml"
-        content: |
-          server:
-            http_listen_port: 3200
-
-          distributor:
-            receivers:
-              otlp:
-                protocols:
-                  http:
-                  grpc:
-
-          storage:
-            trace:
-              backend: local
-              local:
-                path: /tmp/tempo/traces
-
-    # ==========================
-    # 7️⃣ Buat docker-compose.yml
-    # ==========================
-    - name: Buat file docker-compose.yml
-      copy:
+        src: "{{ repo_dir }}/monitoring-wandoor/docker-compose.yml"
         dest: "{{ monitoring_dir }}/docker-compose.yml"
-        content: |
-          version: '3.8'
-
-          services:
-            prometheus:
-              image: prom/prometheus
-              container_name: prometheus
-              restart: always
-              ports:
-                - "9090:9090"
-              volumes:
-                - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-
-            loki:
-              image: grafana/loki:2.9.0
-              container_name: loki
-              restart: always
-              ports:
-                - "3100:3100"
-              command: -config.file=/etc/loki/local-config.yaml
-
-            tempo:
-              image: grafana/tempo:2.4.1
-              container_name: tempo
-              restart: always
-              ports:
-                - "3200:3200"
-                - "4320:4317"
-                - "4321:4318"
-              volumes:
-                - ./tempo/tempo-config.yml:/etc/tempo/tempo.yml
-              command: -config.file=/etc/tempo/tempo.yml
-
-            grafana:
-              image: grafana/grafana:10.0.3
-              container_name: grafana
-              restart: always
-              ports:
-                - "3000:3000"
-              volumes:
-                - grafana-storage:/var/lib/grafana
-
-          volumes:
-            grafana-storage:
+        mode: "0644"
 
     # ==========================
-    # 8️⃣ Jalankan Docker Compose
+    # 7️⃣ Jalankan Docker Compose
     # ==========================
     - name: Jalankan LGTM stack
       shell: |
@@ -172,7 +103,7 @@
         chdir: "{{ monitoring_dir }}"
 
     # ==========================
-    # 9️⃣ Tampilkan hasil
+    # 8️⃣ Tampilkan hasil
     # ==========================
     - name: Tampilkan informasi akses
       debug:
@@ -181,4 +112,4 @@
           - "Prometheus → http://{{ ansible_host }}:9090"
           - "Loki → http://{{ ansible_host }}:3100"
           - "Tempo → http://{{ ansible_host }}:3200"
-          - "Grafana → http://{{ ansible_host }}:3000 (user: admin / pass: admin)"
+          - "Grafana → http://{{ ansible_host }}:3000 (admin/admin)"
