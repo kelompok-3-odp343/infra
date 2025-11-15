@@ -77,3 +77,19 @@ spec:
       volumes:
         - name: otel-agent
           emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: wandoor
+spec:
+  selector:
+    app: wandoor-backend
+  type: NodePort
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+      nodePort: 30080
+      protocol: TCP
