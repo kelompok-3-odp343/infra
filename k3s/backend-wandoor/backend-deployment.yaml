@@ -13,7 +13,6 @@ spec:
       labels:
         app: wandoor-backend
     spec:
-
       # -- INIT CONTAINER (Download java agent)
       initContainers:
         - name: download-otel-agent
@@ -30,7 +29,7 @@ spec:
 
       containers:
         - name: backend
-          image: jrtr1/wandoor-backend-app:backend-175322ce28932d9a6c48d46f0e798978404cf699
+          image: jrtr1/wandoor-backend-app:backend-3a3a027e17a08c80fa786330706e8c3753d3dfa7
           imagePullPolicy: Always
           ports:
             - containerPort: 8081
@@ -79,7 +78,6 @@ spec:
             # Jalankan Java dengan agent OTEL
             - name: JAVA_TOOL_OPTIONS
               value: "-javaagent:/otel/opentelemetry-javaagent.jar"
-
 
           resources:
             requests:
