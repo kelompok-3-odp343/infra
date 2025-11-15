@@ -73,8 +73,8 @@ services:
     volumes:
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./promtail-config.yml:/etc/promtail/config.yml:ro
-    command: -config.file=/etc/promtail/config.yml
+      - ./promtail-config.yml:/etc/promtail/config/config.yml:ro
+    command: -config.file=/etc/promtail/config/config.yml
 
 networks:
   wandoor-network:
