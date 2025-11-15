@@ -10,6 +10,20 @@
 
   tasks:
     # ============================================================
+    # 1️⃣ Bersihkan semua repo Docker salah (Ubuntu / invalid)
+    # ============================================================
+    - name: Remove invalid Docker repo files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/docker.list
+        - /etc/apt/sources.list.d/docker-ubuntu.list
+        - /etc/apt/sources.list.d/docker-ce.list
+        - /etc/apt/sources.list.d/download_docker_com.list
+      ignore_errors: yes
+
+    # ============================================================
     # 2️⃣ Install dependency dasar
     # ============================================================
     - name: Install basic dependencies
