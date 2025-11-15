@@ -10,7 +10,16 @@
 
   tasks:
     # ==========================
-    # 1️⃣ Clone atau Pull Repo Infra
+    # 1️⃣ Install Git
+    # ==========================
+    - name: Install git
+      apt:
+        name: git
+        state: present
+        update_cache: yes
+
+    # ==========================
+    # 2️⃣ Clone atau Pull Repo Infra
     # ==========================
     - name: Check if repo already exists
       stat:
@@ -32,7 +41,7 @@
       when: repo_git.stat.exists
 
     # ==========================
-    # 2️⃣ Update sistem & install dependency dasar
+    # 3️⃣ Update sistem & install dependency dasar
     # ==========================
     - name: Update apt dan install dependency
       apt:
@@ -45,7 +54,7 @@
         update_cache: yes
 
     # ==========================
-    # 3️⃣ Install Docker
+    # 4️⃣ Install Docker
     # ==========================
     - name: Add Docker GPG key
       apt_key:
@@ -73,7 +82,7 @@
         state: started
 
     # ==========================
-    # 4️⃣ Install Docker Compose
+    # 5️⃣ Install Docker Compose
     # ==========================
     - name: Cek apakah docker-compose sudah terpasang
       command: docker-compose --version
@@ -87,7 +96,7 @@
       when: compose_check.rc != 0
 
     # ==========================
-    # 5️⃣ Buat folder monitoring (jika belum ada)
+    # 6️⃣ Buat folder monitoring
     # ==========================
     - name: Create monitoring directory
       file:
@@ -96,32 +105,10 @@
         mode: "0755"
 
     # ==========================
-    # 6️⃣ Copy docker-compose dari repo infra
+    # 7️⃣ Copy docker-compose.yml
     # ==========================
     - name: Copy docker-compose.yml from infra repo
       copy:
         src: "{{ repo_dir }}/monitoring-wandoor/docker-compose.yml"
         dest: "{{ monitoring_dir }}/docker-compose.yml"
         mode: "0644"
-
-    # ==========================
-    # 7️⃣ Jalankan Docker Compose
-    # ==========================
-    - name: Jalankan LGTM stack
-      shell: |
-        cd {{ monitoring_dir }}
-        docker-compose up -d
-      args:
-        chdir: "{{ monitoring_dir }}"
-
-    # ==========================
-    # 8️⃣ Tampilkan hasil
-    # ==========================
-    - name: Tampilkan informasi akses
-      debug:
-        msg:
-          - "✅ LGTM stack telah berjalan!"
-          - "Prometheus → http://{{ ansible_host }}:9090"
-          - "Loki → http://{{ ansible_host }}:3100"
-          - "Tempo → http://{{ ansible_host }}:3200"
-          - "Grafana → http://{{ ansible_host }}:3000 (admin/admin)"
