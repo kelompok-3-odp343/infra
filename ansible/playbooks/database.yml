@@ -1,5 +1,5 @@
 ---
-- name: Setup Oracle Database & Redis Server using Docker Compose
+- name: Setup Database with Docker Compose
   hosts: db
   become: yes
 
@@ -9,117 +9,55 @@
     compose_dir: "/opt/infra/database-wandoor"
 
   tasks:
-    # ==========================
-    # 1️⃣ Bersihkan repo Docker yang salah
-    # ==========================
-    - name: Remove invalid Docker repo files
-      file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /etc/apt/sources.list.d/docker.list
-        - /etc/apt/sources.list.d/docker-ubuntu.list
-        - /etc/apt/sources.list.d/docker-ce.list
-        - /etc/apt/sources.list.d/download_docker_com.list
-      ignore_errors: yes
-
-    # ==========================
-    # 2️⃣ Install dependencies dasar
-    # ==========================
+    # Install basic dependencies
     - name: Install basic dependencies
       apt:
         name:
-          - ca-certificates
           - curl
+          - wget
           - git
+          - vim
+          - htop
+          - net-tools
+          - apt-transport-https
+          - ca-certificates
           - gnupg
           - lsb-release
         state: present
         update_cache: yes
 
-    # ==========================
-    # 3️⃣ Setup Docker repo resmi untuk Debian 12
-    # ==========================
-    - name: Ensure keyrings directory exists
-      file:
-        path: /etc/apt/keyrings
-        state: directory
-        mode: "0755"
+    # Install Docker menggunakan convenience script
+    - name: Install Docker (one-liner)
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
 
-    - name: Download Docker GPG key
-      get_url:
-        url: https://download.docker.com/linux/debian/gpg
-        dest: /etc/apt/keyrings/docker.gpg
-        mode: "0644"
-
-    - name: Add Docker repository (Debian Bookworm)
-      copy:
-        dest: /etc/apt/sources.list.d/docker.list
-        content: |
-          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable
-        mode: "0644"
-
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-
-    # ==========================
-    # 4️⃣ Install Docker Engine + Compose plugin
-    # ==========================
-    - name: Install Docker engine
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
-
-    - name: Ensure Docker is running
+    - name: Start Docker service
       systemd:
         name: docker
-        enabled: yes
         state: started
+        enabled: yes
 
-    # ==========================
-    # 5️⃣ Clone repo infra
-    # ==========================
-    - name: Check if repo already exists
-      stat:
-        path: "{{ repo_dir }}/.git"
-      register: repo_git
-
-    - name: Clone infra repository (first time)
+    # Clone atau update repo
+    - name: Clone/Update infra repo
       git:
         repo: "{{ repo_url }}"
         dest: "{{ repo_dir }}"
         version: main
         force: yes
-      when: not repo_git.stat.exists
 
-    - name: Pull latest changes (if exists)
-      shell: git pull origin main
-      args:
-        chdir: "{{ repo_dir }}"
-      when: repo_git.stat.exists
-
-    # ==========================
-    # 6️⃣ Jalankan docker-compose langsung dari repo
-    # ==========================
-    - name: Run docker compose up -d
+    # Jalankan Docker Compose
+    - name: Run docker compose up
       shell: docker compose up -d
       args:
         chdir: "{{ compose_dir }}"
 
-    # ==========================
-    # 7️⃣ Tampilkan status container
-    # ==========================
-    - name: Check running containers
-      shell: docker ps
-      register: container_status
+    # Status container
+    - name: Show running containers
+      shell: docker compose ps
+      args:
+        chdir: "{{ compose_dir }}"
+      register: containers
 
     - debug:
-        msg: |
-          🚀 Docker Compose Deployed!
-          {{ container_status.stdout }}
+        var: containers.stdout_lines
