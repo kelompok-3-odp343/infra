@@ -1,10 +1,11 @@
 ---
-- name: Setup Oracle Database & Redis Server
+- name: Setup Oracle Database & Redis Server using Docker Compose
   hosts: db
   become: yes
+
   tasks:
     # ==========================
-    # 1️⃣ Update sistem & install dependency dasar
+    # 1️⃣ Install dependency dasar
     # ==========================
     - name: Install basic dependencies
       apt:
@@ -17,7 +18,7 @@
         update_cache: yes
 
     # ==========================
-    # 2️⃣ Tambahkan repository resmi Docker & install
+    # 2️⃣ Install Docker Engine
     # ==========================
     - name: Add Docker GPG key
       apt_key:
@@ -45,53 +46,39 @@
         state: started
 
     # ==========================
-    # 3️⃣ Setup Oracle Database container
+    # 3️⃣ Install Docker Compose plugin
     # ==========================
-    - name: Create Oracle data volume
-      shell: docker volume create oracle-data
-      args:
-        warn: false
-
-    - name: Run Oracle Database container
-      shell: |
-        if [ ! "$(docker ps -q -f name=oracle-db)" ]; then
-          docker run -d \
-            --name oracle-db \
-            -p 1521:1521 \
-            -p 5500:5500 \
-            -e ORACLE_PASSWORD=root \
-            -e ORACLE_DATABASE=wandoor_db \
-            -e APP_USER=wandoor \
-            -e APP_USER_PASSWORD=root \
-            -v oracle-data:/opt/oracle/oradata \
-            gvenzl/oracle-free:23-slim
-        fi
-      args:
-        executable: /bin/bash
+    - name: Install docker compose plugin
+      apt:
+        name: docker-compose-plugin
+        state: present
+        update_cache: yes
 
     # ==========================
-    # 4️⃣ Setup Redis container
+    # 4️⃣ Copy file docker-compose.yaml
     # ==========================
-    - name: Create Redis data volume
-      shell: docker volume create redis-data
-      args:
-        warn: false
+    - name: Create target directory for compose file
+      file:
+        path: /opt/wandoor-db
+        state: directory
+        mode: "0755"
 
-    - name: Run Redis container
-      shell: |
-        if [ ! "$(docker ps -q -f name=redis-server)" ]; then
-          docker run -d \
-            --name redis-server \
-            -p 6379:6379 \
-            -v redis-data:/data \
-            redis:7.2-alpine \
-            redis-server --requirepass "rediswandoor"
-        fi
-      args:
-        executable: /bin/bash
+    - name: Copy docker-compose.yaml
+      copy:
+        src: infra/database-wandoor/docker-compose.yaml
+        dest: /opt/wandoor-db/docker-compose.yaml
+        mode: "0644"
 
     # ==========================
-    # 5️⃣ Cek status container
+    # 5️⃣ Deploy Oracle & Redis via docker-compose
+    # ==========================
+    - name: Run docker compose up
+      shell: docker compose up -d
+      args:
+        chdir: /opt/wandoor-db
+
+    # ==========================
+    # 6️⃣ Cek status container
     # ==========================
     - name: Check running containers
       shell: docker ps
@@ -99,9 +86,7 @@
 
     - debug:
         msg: |
-          ✅ Oracle DB & Redis setup completed!
-          Oracle DB -> port 1521 | user: wandoor | pass: root
-          Redis -> port 6379 | password: rediswandoor
+          ✅ Oracle DB & Redis deployed using docker-compose!
 
           === Container Status ===
           {{ container_status.stdout }}
