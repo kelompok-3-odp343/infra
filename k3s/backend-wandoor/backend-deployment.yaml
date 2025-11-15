@@ -13,6 +13,19 @@ spec:
       labels:
         app: wandoor-backend
     spec:
+      initContainers:
+        - name: download-otel-agent
+          image: busybox
+          command:
+            - sh
+            - -c
+            - >
+              wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+              -O /otel/opentelemetry-javaagent.jar
+          volumeMounts:
+            - name: otel-agent
+              mountPath: /otel
+
       containers:
         - name: backend
           image: jrtr1/wandoor-backend-app:backend-366ba29cf0983c2b10516a1b87391fe724f885f1
@@ -35,6 +48,17 @@ spec:
               value: "6379"
             - name: REDIS_PASSWORD
               value: "rediswandoor"
+
+            # 🔥 Tambahan untuk traces
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://<IP-VM>:4317"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=wandoor-backend"
+            - name: OTEL_TRACES_SAMPLER
+              value: "always_on"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-javaagent:/otel/opentelemetry-javaagent.jar"
+
           resources:
             requests:
               memory: "2Gi"
@@ -42,19 +66,11 @@ spec:
             limits:
               memory: "2Gi"
               cpu: "1000m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: backend-service
-  namespace: wandoor
-spec:
-  selector:
-    app: wandoor-backend
-  type: NodePort
-  ports:
-    - name: http
-      port: 8081
-      targetPort: 8081
-      nodePort: 30080
-      protocol: TCP
+
+          volumeMounts:
+            - name: otel-agent
+              mountPath: /otel
+
+      volumes:
+        - name: otel-agent
+          emptyDir: {}
