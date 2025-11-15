@@ -3,28 +3,13 @@
   hosts: db
   become: yes
   tasks:
-
-    # ==========================
-    # 0️⃣ Remove wrong Ubuntu repo (ROOT CAUSE FIX)
-    # ==========================
-    - name: Remove old Docker Ubuntu repo if exists
-      file:
-        path: /etc/apt/sources.list.d/docker.list
-        state: absent
-
-    - name: Remove wrong Ubuntu repo entries from main sources.list
-      replace:
-        path: /etc/apt/sources.list
-        regexp: '.*download\.docker\.com/linux/ubuntu.*'
-        replace: ''
-      ignore_errors: yes
-
     # ==========================
     # 1️⃣ Update sistem & install dependency dasar
     # ==========================
     - name: Install basic dependencies
       apt:
         name:
+          - apt-transport-https
           - ca-certificates
           - curl
           - software-properties-common
