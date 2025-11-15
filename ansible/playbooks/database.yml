@@ -3,6 +3,11 @@
   hosts: db
   become: yes
 
+  vars:
+    repo_url: "https://github.com/kelompok-3-odp343/infra.git"
+    repo_dir: "/opt/infra"
+    compose_dir: "/opt/infra/database-wandoor"
+
   tasks:
     # ==========================
     # 1️⃣ Install dependency dasar
@@ -18,16 +23,16 @@
         update_cache: yes
 
     # ==========================
-    # 2️⃣ Install Docker Engine
+    # 2️⃣ Install Docker Engine (Debian Bookworm)
     # ==========================
     - name: Add Docker GPG key
       apt_key:
         url: https://download.docker.com/linux/debian/gpg
         state: present
 
-    - name: Add Docker repository
+    - name: Add Docker repository for Debian bookworm
       apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
         state: present
 
     - name: Install Docker engine
@@ -55,27 +60,34 @@
         update_cache: yes
 
     # ==========================
-    # 4️⃣ Copy file docker-compose.yaml
+    # 4️⃣ Clone infra repository
     # ==========================
-    - name: Create target directory for compose file
-      file:
-        path: /opt/wandoor-db
-        state: directory
-        mode: "0755"
+    - name: Check if repo already exists
+      stat:
+        path: "{{ repo_dir }}/.git"
+      register: repo_git
 
-    - name: Copy docker-compose.yaml
-      copy:
-        src: infra/database-wandoor/docker-compose.yaml
-        dest: /opt/wandoor-db/docker-compose.yaml
-        mode: "0644"
+    - name: Clone infra repository (first time)
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dir }}"
+        version: main
+        force: yes
+      when: not repo_git.stat.exists
+
+    - name: Pull latest changes (if repo exists)
+      shell: git pull origin main
+      args:
+        chdir: "{{ repo_dir }}"
+      when: repo_git.stat.exists
 
     # ==========================
-    # 5️⃣ Deploy Oracle & Redis via docker-compose
+    # 5️⃣ Jalankan docker-compose dari repo
     # ==========================
-    - name: Run docker compose up
+    - name: Run docker compose up from repository
       shell: docker compose up -d
       args:
-        chdir: /opt/wandoor-db
+        chdir: "{{ compose_dir }}"
 
     # ==========================
     # 6️⃣ Cek status container
@@ -86,7 +98,7 @@
 
     - debug:
         msg: |
-          ✅ Oracle DB & Redis deployed using docker-compose!
+          ✅ Oracle DB & Redis deployed using docker-compose (via infra repo)!
 
           === Container Status ===
           {{ container_status.stdout }}
